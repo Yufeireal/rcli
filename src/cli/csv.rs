@@ -7,7 +7,7 @@ use super::verify_input_file;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OutputFormat {
-    Json, 
+    Json,
     Yaml,
 }
 

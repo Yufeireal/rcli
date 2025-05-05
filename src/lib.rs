@@ -1,6 +1,6 @@
 mod cli;
 mod process;
 
-pub use cli::{SubCommand, Opts};
+pub use cli::{Opts, SubCommand};
 
 pub use process::*;
