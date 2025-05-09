@@ -1,4 +1,4 @@
-use rand::seq::{IndexedRandom, SliceRandom};
+use rand::seq::SliceRandom;
 
 const UPPER: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
@@ -12,7 +12,7 @@ pub fn process_genpass(
     number: bool,
     symbol: bool,
 ) -> anyhow::Result<String> {
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     let mut password = Vec::new();
     let mut chars = Vec::new();
 

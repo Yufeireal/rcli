@@ -4,6 +4,8 @@ use anyhow::{Ok, Result};
 use ed25519_dalek::{ed25519::signature::SignerMut, Signature, SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
 
+use crate::TextSignFormat;
+
 use super::process_genpass;
 
 
@@ -106,13 +108,69 @@ impl Edd25519Signer {
     }
 }
 
-impl Ed25519Verifier {
+impl Edd25519Verifier {
     pub fn try_new(key: impl AsRef<[u8]>) -> Result<Self> {
         let key = key.as_ref();
         let key = (&key[..32]).try_into()?;
         let key = VerifyingKey::from_bytes(key)?;
         Ok(Self {key})
     }
-
 }
 
+pub fn process_text_sign(reader: &mut dyn Read,
+    key: &[u8], // (ptr, length
+    format: TextSignFormat
+) -> Result<Vec<u8>> {
+    let mut signer: Box<dyn TextSigner> = match format {
+        TextSignFormat::Blake3 => Box::new(Blake3::try_new(key)?),
+        TextSignFormat::Ed25519 => Box::new(Edd25519Signer::try_new(key)?),
+    };
+    signer.sign(reader)
+}
+
+
+pub fn process_text_verify(reader: &mut dyn Read, 
+    key: &[u8],
+    sig: &[u8],
+    format: TextSignFormat,
+) -> Result<bool> {
+    let verifier: Box<dyn TextVerifier> = match format {
+        TextSignFormat::Blake3 => Box::new(Blake3::try_new(key)?),
+        TextSignFormat::Ed25519 => Box::new(Edd25519Verifier::try_new(key)?),
+    };
+    verifier.verify(reader, sig)
+}
+
+pub fn process_text_key_generate(format: TextSignFormat) -> Result<HashMap<&'static str, Vec<u8>>> {
+    match format {
+        TextSignFormat::Blake3 => Blake3::generate(),
+        TextSignFormat::Ed25519 => Edd25519Signer::generate(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    const KEY: &[u8] = include_bytes!("../../fixtures/blake3.txt");
+    #[test]
+    fn test_process_text_sign() -> Result<()>{
+        let mut reader = "hello".as_bytes();
+        let mut reader1 = "hello".as_bytes();
+        let format = TextSignFormat::Blake3;
+        let sig = process_text_sign(&mut reader, KEY, format)?;
+        let ret = process_text_verify(&mut reader1, KEY, &sig, format)?;
+        assert!(ret);
+        Ok(())
+    }
+    #[test]
+    fn test_process_text_verify() -> Result<()> {
+        let mut reader = "hello".as_bytes();
+        let format = TextSignFormat::Blake3;
+        let sig = "33Ypo4rveYpWmJKAiGnnse-wHQhMVujjmcVkV4Tl43k";
+        let sig = URL_SAFE_NO_PAD.decode(sig)?;
+        let ret = process_text_verify(&mut reader, KEY, &sig, format)?;
+        assert!(ret);
+        Ok(())
+    }
+}
