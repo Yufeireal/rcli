@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub use base64::Base64SubCommand;
 use clap::Parser;
@@ -28,6 +28,8 @@ pub enum SubCommand {
     GenPass(GenPassOpts),
     #[command(subcommand)]
     Base64(Base64SubCommand),
+    #[command(subcommand)]
+    Text(TextSubCommand),
 }
 
 fn verify_file(filename: &str) -> Result<String, &'static str> {
@@ -39,7 +41,7 @@ fn verify_file(filename: &str) -> Result<String, &'static str> {
     }
 }
 
-fn verify_path(path: &str) -> Result<String, &'static str> {
+fn verify_path(path: &str) -> Result<PathBuf, &'static str> {
     let p = Path::new(path);
     if p.exists() && p.is_dir(){
         Ok(path.into())

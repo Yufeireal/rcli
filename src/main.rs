@@ -1,10 +1,9 @@
 use clap::Parser;
-use zxcvbn::zxcvbn;
 
 use std::fs;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rcli::{
-    get_content, get_reader, process_csv, process_decode, process_encode, process_genpass, process_text_key_generate, process_text_sign, Base64SubCommand, Opts, SubCommand, TextSubCommand
+    get_content, get_reader, process_csv, process_decode, process_encode, process_genpass, process_text_key_generate, process_text_sign, process_text_verify, Base64SubCommand, Opts, SubCommand, TextSubCommand
 };
 use zxcvbn::zxcvbn;
 
@@ -28,8 +27,8 @@ fn main() -> anyhow::Result<()> {
                 opts.symbol,
             )?;
             println!("{}", ret);
-            let estimate = zxcvbn(&ret, &[])?;
-            println!("{}",estimate)
+            let estimate = zxcvbn(&ret, &[]).score();
+            println!("{}", estimate)
         }
         SubCommand::Base64(sub_cmd) => match sub_cmd {
             Base64SubCommand::Encode(opts) => {
@@ -61,7 +60,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
             TextSubCommand::Generate(opts) => {
-                let key = process_text_key_generate(&opts.format)?;
+                let key = process_text_key_generate(opts.format)?;
                 for (k, v) in key {
                     fs::write(opts.output_path.join(k), v)?;
                 }
