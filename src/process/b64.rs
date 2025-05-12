@@ -34,7 +34,7 @@ mod tests {
     use crate::get_reader;
 
     #[test]
-    fn test_process_encode() -> Result<()>{
+    fn test_process_encode() -> Result<()> {
         let input = "Cargo.toml";
         let mut reader = get_reader(input)?;
         let format = Base64Format::Standard;
@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_process_decode() -> Result<()>{
+    fn test_process_decode() -> Result<()> {
         let input = "fixture/b64.txt";
         let mut reader = get_reader(input)?;
         let format = Base64Format::UrlSafe;

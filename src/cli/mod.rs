@@ -7,10 +7,12 @@ use genpass::GenPassOpts;
 mod base64;
 mod csv;
 mod genpass;
+mod http;
 mod text;
 
 pub use self::csv::OutputFormat;
 pub use base64::Base64Format;
+pub use http::HttpSubCommand;
 pub use text::{TextSignFormat, TextSubCommand};
 
 #[derive(Debug, Parser)]
@@ -30,6 +32,8 @@ pub enum SubCommand {
     Base64(Base64SubCommand),
     #[command(subcommand)]
     Text(TextSubCommand),
+    #[command(subcommand)]
+    Http(HttpSubCommand),
 }
 
 fn verify_file(filename: &str) -> Result<String, &'static str> {
@@ -43,7 +47,7 @@ fn verify_file(filename: &str) -> Result<String, &'static str> {
 
 fn verify_path(path: &str) -> Result<PathBuf, &'static str> {
     let p = Path::new(path);
-    if p.exists() && p.is_dir(){
+    if p.exists() && p.is_dir() {
         Ok(path.into())
     } else {
         Err("Path does not exist or is not a directory")

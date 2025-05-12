@@ -1,4 +1,3 @@
-
 use core::fmt;
 use std::{path::PathBuf, str::FromStr};
 
@@ -13,12 +12,12 @@ pub enum TextSubCommand {
     Sign(TextSignOpts),
     #[command(about = "Verify a signature with a public/session key")]
     Verify(TextVerifyOpts),
-    #[command(about="Generate a radom blake3 key or ed25519 key pair")]
+    #[command(about = "Generate a radom blake3 key or ed25519 key pair")]
     Generate(KeyGenerateOpts),
 }
 
 #[derive(Debug, Parser)]
-pub struct  TextSignOpts {
+pub struct TextSignOpts {
     #[arg(short, long, value_parser=verify_file, default_value="-")]
     pub input: String,
     #[arg(short, long, value_parser=verify_file)]
@@ -44,7 +43,7 @@ pub struct KeyGenerateOpts {
     #[arg(long, default_value="blake3", value_parser = parse_text_sign_format)]
     pub format: TextSignFormat,
     #[arg(short, long, value_parser = verify_path)]
-    pub output_path: PathBuf
+    pub output_path: PathBuf,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -59,12 +58,12 @@ fn parse_text_sign_format(format: &str) -> Result<TextSignFormat, anyhow::Error>
 
 impl FromStr for TextSignFormat {
     type Err = anyhow::Error;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "blake3" => Ok(TextSignFormat::Blake3),
             "ed25519" => Ok(TextSignFormat::Ed25519),
-            _ => Err(anyhow::anyhow!("Invalid format" ))
+            _ => Err(anyhow::anyhow!("Invalid format")),
         }
     }
 }

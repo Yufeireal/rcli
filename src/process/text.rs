@@ -8,7 +8,6 @@ use crate::TextSignFormat;
 
 use super::process_genpass;
 
-
 pub trait TextSigner {
     // signer could sign any input data
     fn sign(&mut self, reader: &mut dyn Read) -> Result<Vec<u8>>;
@@ -67,7 +66,6 @@ impl TextVerifier for Edd25519Verifier {
     }
 }
 
-
 impl Blake3 {
     pub fn try_new(key: impl AsRef<[u8]>) -> Result<Self> {
         let key = key.as_ref();
@@ -76,9 +74,9 @@ impl Blake3 {
     }
 
     pub fn new(key: [u8; 32]) -> Self {
-        Self {key}
+        Self { key }
     }
-    
+
     fn generate() -> Result<HashMap<&'static str, Vec<u8>>> {
         let key = process_genpass(32, true, true, true, true)?;
         let mut map = HashMap::new();
@@ -95,7 +93,7 @@ impl Edd25519Signer {
     }
     pub fn new(key: &[u8; 32]) -> Self {
         let key = SigningKey::from_bytes(key);
-        Self {key}
+        Self { key }
     }
 
     fn generate() -> Result<HashMap<&'static str, Vec<u8>>> {
@@ -113,13 +111,14 @@ impl Edd25519Verifier {
         let key = key.as_ref();
         let key = (&key[..32]).try_into()?;
         let key = VerifyingKey::from_bytes(key)?;
-        Ok(Self {key})
+        Ok(Self { key })
     }
 }
 
-pub fn process_text_sign(reader: &mut dyn Read,
+pub fn process_text_sign(
+    reader: &mut dyn Read,
     key: &[u8], // (ptr, length
-    format: TextSignFormat
+    format: TextSignFormat,
 ) -> Result<Vec<u8>> {
     let mut signer: Box<dyn TextSigner> = match format {
         TextSignFormat::Blake3 => Box::new(Blake3::try_new(key)?),
@@ -128,8 +127,8 @@ pub fn process_text_sign(reader: &mut dyn Read,
     signer.sign(reader)
 }
 
-
-pub fn process_text_verify(reader: &mut dyn Read, 
+pub fn process_text_verify(
+    reader: &mut dyn Read,
     key: &[u8],
     sig: &[u8],
     format: TextSignFormat,
@@ -154,7 +153,7 @@ mod tests {
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     const KEY: &[u8] = include_bytes!("../../fixtures/blake3.txt");
     #[test]
-    fn test_process_text_sign() -> Result<()>{
+    fn test_process_text_sign() -> Result<()> {
         let mut reader = "hello".as_bytes();
         let mut reader1 = "hello".as_bytes();
         let format = TextSignFormat::Blake3;
