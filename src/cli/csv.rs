@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use clap::Parser;
 
-use crate::{get_reader, process_csv, CmdExecutor};
+use crate::CmdExecutor;
 
 use super::verify_file;
 
