@@ -3,6 +3,8 @@ use std::str::FromStr;
 
 use clap::Parser;
 
+use crate::{get_reader, process_csv, CmdExecutor};
+
 use super::verify_file;
 
 #[derive(Debug, Clone, Copy)]
@@ -52,5 +54,16 @@ impl FromStr for OutputFormat {
 impl fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Into::<&str>::into(*self))
+    }
+}
+
+impl CmdExecutor for CsvOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let output = if let Some(output) = self.output {
+            output
+        } else {
+            format!("output.{}", self.format)
+        };
+        crate::process_csv(&self.input, output, self.format)
     }
 }

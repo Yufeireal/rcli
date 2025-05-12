@@ -9,3 +9,8 @@ pub use cli::{
 
 pub use process::*;
 pub use utils::*;
+
+
+pub trait CmdExecutor {
+    async fn execute(self) -> anyhow::Result<()>;
+}

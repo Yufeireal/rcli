@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{ops::Sub, path::{Path, PathBuf}};
 
 pub use base64::Base64SubCommand;
 use clap::Parser;
@@ -9,6 +9,8 @@ mod csv;
 mod genpass;
 mod http;
 mod text;
+
+use crate::CmdExecutor;
 
 pub use self::csv::OutputFormat;
 pub use base64::Base64Format;
@@ -34,6 +36,18 @@ pub enum SubCommand {
     Text(TextSubCommand),
     #[command(subcommand)]
     Http(HttpSubCommand),
+}
+
+impl CmdExecutor for SubCommand {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            Self::Csv(opts) => opts.execute().await,
+            Self::GenPass(opts) => opts.execute().await,
+            Self::Base64(opts) => opts.execute().await,
+            Self::Text(opts) => opts.execute().await,
+            Self::Http(opts) => opts.execute().await
+        }
+    }
 }
 
 fn verify_file(filename: &str) -> Result<String, &'static str> {
