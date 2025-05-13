@@ -26,3 +26,4 @@ tokio = { version = "1.36.0", features = ["rt", "rt-multi-thread", "macros", "ne
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tower-http = { version = "0.5.2", features = ["compression-full", "cors", "trace", "fs"] }
+chacha20poly1305 = "0.10.1"

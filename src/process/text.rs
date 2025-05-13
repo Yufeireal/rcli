@@ -2,6 +2,12 @@ use std::{collections::HashMap, io::Read};
 
 use anyhow::{Ok, Result};
 use ed25519_dalek::{ed25519::signature::SignerMut, Signature, SigningKey, VerifyingKey};
+
+use chacha20poly1305::{
+    aead::{Aead, KeyInit},
+    ChaCha20Poly1305, Nonce,
+};
+
 use rand::rngs::OsRng;
 
 use crate::TextSignFormat;
@@ -19,6 +25,11 @@ pub trait TextVerifier {
 
 pub struct Blake3 {
     key: [u8; 32],
+}
+
+pub struct Chacha20Poly1305Crypter {
+    cipher: ChaCha20Poly1305,
+    nonce: Nonce,
 }
 
 pub struct Edd25519Signer {
@@ -106,6 +117,26 @@ impl Edd25519Signer {
     }
 }
 
+impl Chacha20Poly1305Crypter {
+    pub fn try_new(key: impl AsRef<[u8]>) -> Result<Self> {
+        let key = key.as_ref();
+        let key = (&key[..32]).try_into()?;
+        Ok(Self::new(key))
+    }
+    pub fn new(key: &[u8; 32]) -> Self {
+        let cipher = ChaCha20Poly1305::new_from_slice(key).unwrap();
+        let nonce = Nonce::from_slice(&key[..12]).clone();
+        Self { cipher, nonce }
+    }
+
+    fn generate() -> Result<HashMap<&'static str, Vec<u8>>> {
+        let key = process_genpass(32, true, true, true, true)?;
+        let mut map = HashMap::new();
+        map.insert("chacha20poly1305.key", key.as_bytes().to_vec());
+        Ok(map)
+    }
+}
+
 impl Edd25519Verifier {
     pub fn try_new(key: impl AsRef<[u8]>) -> Result<Self> {
         let key = key.as_ref();
@@ -123,6 +154,10 @@ pub fn process_text_sign(
     let mut signer: Box<dyn TextSigner> = match format {
         TextSignFormat::Blake3 => Box::new(Blake3::try_new(key)?),
         TextSignFormat::Ed25519 => Box::new(Edd25519Signer::try_new(key)?),
+        TextSignFormat::Chacha => {
+            // If not implemented, return an error
+            return Err(anyhow::anyhow!("Chacha is not supported for signing"));
+        }
     };
     signer.sign(reader)
 }
@@ -136,6 +171,10 @@ pub fn process_text_verify(
     let verifier: Box<dyn TextVerifier> = match format {
         TextSignFormat::Blake3 => Box::new(Blake3::try_new(key)?),
         TextSignFormat::Ed25519 => Box::new(Edd25519Verifier::try_new(key)?),
+        TextSignFormat::Chacha => {
+            // If not implemented, return an error
+            return Err(anyhow::anyhow!("Chacha is not supported for verifying"));
+        }
     };
     verifier.verify(reader, sig)
 }
@@ -144,7 +183,29 @@ pub fn process_text_key_generate(format: TextSignFormat) -> Result<HashMap<&'sta
     match format {
         TextSignFormat::Blake3 => Blake3::generate(),
         TextSignFormat::Ed25519 => Edd25519Signer::generate(),
+        TextSignFormat::Chacha => Chacha20Poly1305Crypter::generate(),
     }
+}
+
+pub fn process_text_encrypt(reader: &mut dyn Read, key: &[u8]) -> Result<Vec<u8>> {
+    let mut buf = Vec::new();
+    reader.read_to_end(&mut buf)?;
+    let chacha: Chacha20Poly1305Crypter = Chacha20Poly1305Crypter::try_new(key)?;
+    chacha
+        .cipher
+        .encrypt(&chacha.nonce, buf.as_slice())
+        .map_err(|e| anyhow::anyhow!("chacha20poly1305 encrypt error: {:?}", e))
+}
+
+pub fn process_text_decrypt(reader: &mut dyn Read, key: &[u8]) -> Result<Vec<u8>> {
+    let mut buf = Vec::new();
+    reader.read_to_end(&mut buf)?;
+
+    let chacha: Chacha20Poly1305Crypter = Chacha20Poly1305Crypter::try_new(key)?;
+    chacha
+        .cipher
+        .decrypt(&chacha.nonce, buf.as_slice())
+        .map_err(|e| anyhow::anyhow!("chacha20poly1305 decrypt error: {:?}", e))
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use crate::cli::{Opts, OutputFormat};
+use crate::cli::OutputFormat;
 use anyhow::{Ok, Result};
 use csv::Reader;
 use serde::{Deserialize, Serialize};

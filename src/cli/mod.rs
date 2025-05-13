@@ -8,7 +8,6 @@ mod genpass;
 mod http;
 mod text;
 
-
 pub use self::{base64::*, csv::*, genpass::*, http::*, text::*};
 
 #[derive(Debug, Parser)]
