@@ -1,14 +1,15 @@
-use std::{collections::HashMap, io::Read};
+use std::{collections::HashMap, io::Read, vec};
 
 use anyhow::{Ok, Result};
+use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
 use ed25519_dalek::{ed25519::signature::SignerMut, Signature, SigningKey, VerifyingKey};
 
 use chacha20poly1305::{
     aead::{Aead, KeyInit},
-    ChaCha20Poly1305, Nonce,
+    ChaCha20Poly1305, Key, Nonce,
 };
 
-use rand::rngs::OsRng;
+use rand::{rngs::OsRng, RngCore};
 
 use crate::TextSignFormat;
 
@@ -146,6 +147,16 @@ impl Edd25519Verifier {
     }
 }
 
+fn get_key(key: &str) -> Result<Key> {
+    let mut key_bytes = [0u8; 32];
+    let key_raw = key.as_bytes();
+    if key_raw.len() != 32 {
+        return Err(anyhow::anyhow!("Key must be exactly 32 bytes long"));
+    }
+    key_bytes.copy_from_slice(key_raw);
+    Ok(Key::from_slice(&key_bytes).clone())
+}
+
 pub fn process_text_sign(
     reader: &mut dyn Read,
     key: &[u8], // (ptr, length
@@ -187,25 +198,34 @@ pub fn process_text_key_generate(format: TextSignFormat) -> Result<HashMap<&'sta
     }
 }
 
-pub fn process_text_encrypt(reader: &mut dyn Read, key: &[u8]) -> Result<Vec<u8>> {
+pub fn process_text_encrypt(reader: &mut dyn Read, key: &str) -> Result<Vec<u8>> {
+    let key = get_key(key)?;
     let mut buf = Vec::new();
     reader.read_to_end(&mut buf)?;
-    let chacha: Chacha20Poly1305Crypter = Chacha20Poly1305Crypter::try_new(key)?;
-    chacha
-        .cipher
-        .encrypt(&chacha.nonce, buf.as_slice())
-        .map_err(|e| anyhow::anyhow!("chacha20poly1305 encrypt error: {:?}", e))
+    let cipher = ChaCha20Poly1305::new(&key);
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let ciphertext = cipher.encrypt(nonce, buf.as_slice()).unwrap();
+    let mut ret = Vec::new();
+    ret.extend_from_slice(nonce_bytes.as_slice());
+    ret.extend_from_slice(&ciphertext);
+    Ok(ret)
 }
 
-pub fn process_text_decrypt(reader: &mut dyn Read, key: &[u8]) -> Result<Vec<u8>> {
+pub fn process_text_decrypt(reader: &mut dyn Read, key: &str) -> Result<Vec<u8>> {
+    let key = get_key(key)?;
     let mut buf = Vec::new();
     reader.read_to_end(&mut buf)?;
-
-    let chacha: Chacha20Poly1305Crypter = Chacha20Poly1305Crypter::try_new(key)?;
-    chacha
-        .cipher
-        .decrypt(&chacha.nonce, buf.as_slice())
-        .map_err(|e| anyhow::anyhow!("chacha20poly1305 decrypt error: {:?}", e))
+    let decoded = BASE64_URL_SAFE_NO_PAD.decode(&buf)?;
+    print!("asdfasdfasfasdf");
+    let (nonce_bytes, ciphertext) = decoded.split_at(12);
+    let cipher = ChaCha20Poly1305::new(&key);
+    let nonce = Nonce::from_slice(nonce_bytes);
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|e| anyhow::anyhow!("chacha20poly1305 decrypt error: {:?}", e))?;
+    Ok(plaintext)
 }
 
 #[cfg(test)]

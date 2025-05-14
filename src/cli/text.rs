@@ -154,7 +154,7 @@ impl CmdExecutor for KeyGenerateOpts {
 impl CmdExecutor for TextEncryptOpts {
     async fn execute(self) -> anyhow::Result<()> {
         let mut reader = get_reader(&self.input)?;
-        let ciphertext = process_text_encrypt(&mut reader, &self.key.as_bytes())?;
+        let ciphertext = process_text_encrypt(&mut reader, &self.key)?;
         println!("{}", BASE64_URL_SAFE_NO_PAD.encode(ciphertext));
         Ok(())
     }
@@ -163,7 +163,7 @@ impl CmdExecutor for TextEncryptOpts {
 impl CmdExecutor for TextDecryptOpts {
     async fn execute(self) -> anyhow::Result<()> {
         let mut reader = get_reader(&self.input)?;
-        let plaintext = process_text_decrypt(&mut reader, &self.key.as_bytes())?;
+        let plaintext = process_text_decrypt(&mut reader, &self.key)?;
         println!("{}", String::from_utf8(plaintext)?);
         Ok(())
     }
