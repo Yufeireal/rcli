@@ -112,7 +112,6 @@ impl Edd25519Signer {
     }
 }
 
-
 impl Edd25519Verifier {
     pub fn try_new(key: impl AsRef<[u8]>) -> Result<Self> {
         let key = key.as_ref();

@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use tokio::fs;
 use tower_http::services::ServeDir;
 use tracing::{info, warn};
 
@@ -41,20 +42,33 @@ async fn file_handler(
             format!("File {} not found", p.display()),
         )
     } else {
-        // TODO: test p is a directory
-        // if it is a directory, list all files/subdirectories
-        // as <li><a href="/path/to/file">file name</a></li>
-        // <html><body><ul>...</ul></body></html>
-        match tokio::fs::read_to_string(p).await {
-            Ok(content) => {
-                info!("Read {} bytes", content.len());
-                (StatusCode::OK, content)
+        let content = if p.is_dir() {
+            let mut files = Vec::new();
+            match fs::read_dir(p).await {
+                Ok(mut dir) => {
+                    while let Ok(Some(entry)) = dir.next_entry().await {
+                        let path = entry.path();
+                        let file_name = entry.file_name().to_string_lossy().to_string();
+                        let link = path.display();
+                        files.push(format!("<li><a href=\"{}\">{}</a></li>", link, file_name));
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to read directory: {:?}", e);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
+                }
             }
-            Err(e) => {
-                warn!("Failed to read file: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            format!("<html><body><ul>{}</ul></body></html>", files.join("\n"))
+        } else {
+            match tokio::fs::read_to_string(p).await {
+                Ok(content) => content,
+                Err(e) => {
+                    warn!("Failed to read file: {:?}", e);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
+                }
             }
-        }
+        };
+        (StatusCode::OK, content)
     }
 }
 

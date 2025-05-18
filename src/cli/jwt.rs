@@ -1,6 +1,5 @@
-use clap::Parser;
 use crate::{process_jwt_sign, process_jwt_verify, CmdExecutor};
-
+use clap::Parser;
 
 #[derive(Debug, Parser)]
 pub enum JWTSubCommand {
@@ -19,7 +18,6 @@ pub struct JWTSignOpts {
     #[arg(long)]
     exp: String,
 }
-
 
 #[derive(Debug, Parser)]
 pub struct JWTVerifyOpts {

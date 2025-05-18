@@ -6,10 +6,10 @@ mod base64;
 mod csv;
 mod genpass;
 mod http;
-mod text;
 mod jwt;
+mod text;
 
-pub use self::{base64::*, csv::*, genpass::*, http::*, text::*, jwt::*};
+pub use self::{base64::*, csv::*, genpass::*, http::*, jwt::*, text::*};
 
 #[derive(Debug, Parser)]
 #[command(name="rcli", version, author, about, long_about = None)]
