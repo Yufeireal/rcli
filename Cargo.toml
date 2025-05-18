@@ -27,3 +27,8 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tower-http = { version = "0.5.2", features = ["compression-full", "cors", "trace", "fs"] }
 chacha20poly1305 = "0.10.1"
+jsonwebtoken = "9.3.1"
+hmac = "0.12.1"
+sha2 = "0.10.9"
+chrono = "0.4.41"
+jwt = "0.16.0"

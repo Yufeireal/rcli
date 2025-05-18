@@ -7,8 +7,9 @@ mod csv;
 mod genpass;
 mod http;
 mod text;
+mod jwt;
 
-pub use self::{base64::*, csv::*, genpass::*, http::*, text::*};
+pub use self::{base64::*, csv::*, genpass::*, http::*, text::*, jwt::*};
 
 #[derive(Debug, Parser)]
 #[command(name="rcli", version, author, about, long_about = None)]
@@ -30,6 +31,8 @@ pub enum SubCommand {
     Text(TextSubCommand),
     #[command(subcommand)]
     Http(HttpSubCommand),
+    #[command(subcommand)]
+    Jwt(JWTSubCommand),
 }
 
 fn verify_file(filename: &str) -> Result<String, &'static str> {
